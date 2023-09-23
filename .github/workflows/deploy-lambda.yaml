@@ -22,11 +22,7 @@ jobs:
       run: npm ci
 
     - name: Package Lambda function
-      run: |
-        mkdir package
-        cp -r . package/
-        cd package
-        zip -r ../function.zip .
+      run: zip -r function.zip .
 
     - name: Configure AWS CLI
       run: |
