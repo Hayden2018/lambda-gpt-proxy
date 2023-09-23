@@ -11,6 +11,6 @@
   "type": "module",
   "dependencies": {
     "aws-sdk": "^2.1459.0",
-    "openai-streams": "^6.2.0"
+    "axios": "^0.26.1"
   }
 }

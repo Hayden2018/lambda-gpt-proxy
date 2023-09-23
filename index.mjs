@@ -1,7 +1,6 @@
-import AWS from 'aws-sdk';
-import OpenAI from 'openai';
 import { EventEmitter } from 'events';
-const { Configuration, OpenAIApi } = OpenAI;
+import AWS from 'aws-sdk';
+import axios from 'axios';
 
 function parseNoisyJSON(noisyString) {
     let parsedObjects = [];
@@ -81,6 +80,7 @@ export const handler = async (event) => {
         const eventEmitter = new EventEmitter();
 
         const {
+            urlType,
             apiKey,
             baseURL,
             model,
@@ -89,10 +89,35 @@ export const handler = async (event) => {
             temperature,
             top_p,
         } = JSON.parse(event.body);
-    
-        const configuration = new Configuration({ apiKey, basePath: `${baseURL}/v1/` });
-        const openai = new OpenAIApi(configuration);
-    
+
+        const requestConfig = urlType === 'openai' ?
+        {
+            method: 'post',
+            responseType: 'stream',
+            url: `${baseURL}/v1/chat/completions`,
+            headers: { Authorization: `Bearer ${apiKey}` },
+            data: {
+                model,
+                messages,
+                top_p,
+                temperature,
+                stream: true,
+            },
+        }
+            :
+        {
+            method: 'post',
+            responseType: 'stream',
+            url: baseURL,
+            headers: { 'API-Key': apiKey },
+            data: {
+                messages,
+                top_p,
+                temperature,
+                stream: true,
+            },
+        };
+
         const processQueue = new MessageQueue(async (data) => {
             await apigwManagementApi.postToConnection({
                 ConnectionId: connectionId,
@@ -106,21 +131,13 @@ export const handler = async (event) => {
                 eventEmitter.emit('stop');
             }
         });
-    
-        const completion = await openai.createChatCompletion({
-            model,
-            messages,
-            temperature,
-            top_p,
-            stream: true,
-        }, { responseType: 'stream' });
-    
-        const stream = completion.data;
+
+        const response = await axios(requestConfig);
     
         let lastChunkTime = new Date().getTime();
-        let timeoutChecker = setInterval(async () => {
+        let checkTimeout = setInterval(async () => {
             if (new Date().getTime() - lastChunkTime > 8000) {
-                clearInterval(timeoutChecker);
+                clearInterval(checkTimeout);
                 await apigwManagementApi.postToConnection({
                     ConnectionId: connectionId,
                     Data: JSON.stringify({
@@ -131,15 +148,15 @@ export const handler = async (event) => {
                 }).promise();
                 eventEmitter.emit('stop');
             }
-        }, 1000);
+        }, 800);
     
-        stream.on('data', async (chunk) => {
+        response.data.on('data', async (chunk) => {
             lastChunkTime = new Date().getTime();
             const jsonChunks = parseNoisyJSON(chunk.toString());
-            for (const data of jsonChunks) {
-                if (data.choices && data.choices.length) {
-                    processQueue.enqueue(data.choices[0]);
-                    if (data.choices[0].finish_reason === 'stop') clearInterval(timeoutChecker);
+            for (const { choices } of jsonChunks) {
+                if (choices && choices.length) {
+                    processQueue.enqueue(choices[0]);
+                    if (choices[0].finish_reason === 'stop') clearInterval(checkTimeout);
                 }
             }
         });

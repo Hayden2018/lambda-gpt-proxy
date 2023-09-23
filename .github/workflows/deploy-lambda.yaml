@@ -1,0 +1,38 @@
+name: Deploy to AWS Lambda
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository content
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Package Lambda function
+      run: |
+        mkdir package
+        cp -r . package/
+        cd package
+        zip -r ../function.zip .
+
+    - name: Configure AWS CLI
+      run: |
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws configure set default.region $AWS_REGION
+
+    - name: Deploy to AWS Lambda
+      run: aws lambda update-function-code --function-name your_lambda_function_name --zip-file fileb://function.zip
