@@ -33,4 +33,4 @@ jobs:
         aws configure set default.region $AWS_REGION
 
     - name: Deploy to AWS Lambda
-      run: aws lambda update-function-code --function-name your_lambda_function_name --zip-file fileb://function.zip
+      run: aws lambda update-function-code --function-name Dialogcraft-GPT-Proxy --zip-file fileb://function.zip
