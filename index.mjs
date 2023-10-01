@@ -136,19 +136,18 @@ export const handler = async (event) => {
     
         let lastChunkTime = new Date().getTime();
         let checkTimeout = setInterval(async () => {
-            if (new Date().getTime() - lastChunkTime > 8000) {
+            if (new Date().getTime() - lastChunkTime > 9000) {
                 clearInterval(checkTimeout);
                 await apigwManagementApi.postToConnection({
                     ConnectionId: connectionId,
                     Data: JSON.stringify({
-                        finish_reason: 'error',
-                        delta: { },
+                        finish_reason: 'timeout',
                         requestId,
                     }),
                 }).promise();
                 eventEmitter.emit('stop');
             }
-        }, 800);
+        }, 900);
     
         response.data.on('data', async (chunk) => {
             lastChunkTime = new Date().getTime();
@@ -170,7 +169,6 @@ export const handler = async (event) => {
             ConnectionId: connectionId,
             Data: JSON.stringify({
                 finish_reason: 'error',
-                delta: { },
                 requestId,
             }),
         }).promise();
