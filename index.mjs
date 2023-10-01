@@ -63,18 +63,19 @@ class MessageQueue {
 }
 
 export const handler = async (event) => {
-    try {
-        const { AWS_REGION } = process.env;
-        const apiId = event.requestContext.apiId;
-        const stage = event.requestContext.stage;
-        const connectionId = event.requestContext.connectionId;
-        const callbackUrlForAWS = `https://${apiId}.execute-api.${AWS_REGION}.amazonaws.com/${stage}`;
-        
-        const apigwManagementApi = new AWS.ApiGatewayManagementApi({
-            apiVersion: '2018-11-29',
-            endpoint: callbackUrlForAWS
-        });
 
+    const { AWS_REGION } = process.env;
+    const apiId = event.requestContext.apiId;
+    const stage = event.requestContext.stage;
+    const connectionId = event.requestContext.connectionId;
+    const callbackUrlForAWS = `https://${apiId}.execute-api.${AWS_REGION}.amazonaws.com/${stage}`;
+    
+    const apigwManagementApi = new AWS.ApiGatewayManagementApi({
+        apiVersion: '2018-11-29',
+        endpoint: callbackUrlForAWS
+    });
+
+    try {
         const eventEmitter = new EventEmitter();
 
         const {
