@@ -164,6 +164,7 @@ export const handler = async (event) => {
         });
 
     } catch (error) {
+        console.log(error);
         const { requestId } = JSON.parse(event.body);
         await apigwManagementApi.postToConnection({
             ConnectionId: connectionId,
