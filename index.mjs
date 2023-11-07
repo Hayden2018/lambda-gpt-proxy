@@ -100,6 +100,7 @@ export const handler = async (event) => {
                 messages,
                 top_p,
                 temperature,
+                max_tokens: 800,
                 stream: true,
             },
         }
@@ -113,6 +114,7 @@ export const handler = async (event) => {
                 messages,
                 top_p,
                 temperature,
+                max_tokens: 800,
                 stream: true,
             },
         };
@@ -154,7 +156,9 @@ export const handler = async (event) => {
             for (const { choices } of jsonChunks) {
                 if (choices && choices.length) {
                     processQueue.enqueue(choices[0]);
-                    if (choices[0].finish_reason === 'stop') clearInterval(checkTimeout);
+                    if (choices[0].finish_reason === 'stop' || choices[0].finish_details) {
+                        clearInterval(checkTimeout);
+                    }
                 }
             }
         });
