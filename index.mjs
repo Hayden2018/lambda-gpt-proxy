@@ -7,6 +7,7 @@ function parseNoisyJSON(noisyString) {
     let bracketCount = 0;
     let jsonString = '';
     let insideString = false;
+    let lastClosingIndex = 0;
 
     for (let i = 0; i < noisyString.length; i++) {
         let char = noisyString[i];
@@ -28,13 +29,17 @@ function parseNoisyJSON(noisyString) {
         if (jsonString.length > 0 && bracketCount === 0 && !insideString) {
             try {
                 parsedObjects.push(JSON.parse(jsonString));
+                lastClosingIndex = i;
             } catch (e) {
                 // The string was not a valid JSON object, so we ignore it
             }
             jsonString = '';
         }
     }
-    return parsedObjects;
+    return {
+        jsons: parsedObjects,
+        residue: noisyString.slice(lastClosingIndex + 1),
+    };
 }
 
 class MessageQueue {
@@ -150,9 +155,11 @@ export const handler = async (event) => {
             }
         }, 900);
     
-        response.data.on('data', async (chunk) => {
+        let residue = '';
+        response.data.on('data', (chunk) => {
             lastChunkTime = new Date().getTime();
-            const jsonChunks = parseNoisyJSON(chunk.toString());
+            const result = parseNoisyJSON(residue + chunk.toString());
+            residue = result.residue;
             for (const { choices } of jsonChunks) {
                 if (choices && choices.length) {
                     processQueue.enqueue(choices[0]);
