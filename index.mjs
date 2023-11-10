@@ -160,7 +160,7 @@ export const handler = async (event) => {
             lastChunkTime = new Date().getTime();
             const result = parseNoisyJSON(residue + chunk.toString());
             residue = result.residue;
-            for (const { choices } of jsonChunks) {
+            for (const { choices } of result.jsons) {
                 if (choices && choices.length) {
                     processQueue.enqueue(choices[0]);
                     if (choices[0].finish_reason === 'stop' || choices[0].finish_details) {
