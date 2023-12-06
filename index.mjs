@@ -144,7 +144,7 @@ export const handler = async (event) => {
     
         let lastChunkTime = new Date().getTime();
         let checkTimeout = setInterval(async () => {
-            if (new Date().getTime() - lastChunkTime > 9000) {
+            if (new Date().getTime() - lastChunkTime > 30000) {
                 clearInterval(checkTimeout);
                 await apigwManagementApi.postToConnection({
                     ConnectionId: connectionId,
@@ -155,7 +155,7 @@ export const handler = async (event) => {
                 }).promise();
                 eventEmitter.emit('stop');
             }
-        }, 900);
+        }, 1000);
     
         let residue = '';
         response.data.on('data', (chunk) => {
